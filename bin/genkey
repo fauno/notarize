@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# © 2014 Nicolás Reynolds <fauno@endefensadelsl.org>
+#
+# Copying and distribution of this file, with or without modification,
+# are permitted in any medium without royalty provided the copyright
+# notice and this notice are preserved.  This file is offered as-is,
+# without any warranty.
+# 
+# http://www.gnu.org/prep/maintain/html_node/License-Notices-for-Other-Files.html
+set -e
+
+# debuguear si exportamos la variable DEBUG con cualquier cosa
+test ! -z $DEBUG && set -x
+
+pgrep haveged &>/dev/null || echo "Te recomiendo instalar haveged ;)"
+
+export GNUPGHOME="$PWD/gnupg"
+install -dm700 "${GNUPGHOME}"
+
+# genera una llave para la notary especificada, los bits de la llave
+# maestra no importan porque se va a descartar luego.
+echo "Key-Type: RSA
+Key-Length: 4096
+Name-Real: Notary
+Name-Email: notary@${HOSTNAME}
+Preferences: SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB BZIP2 ZIP Uncompressed
+Key-Usage: sign
+Expire-Date: 0
+%commit" | gpg --gen-key --batch --quiet
+
+gpg --armor --export >public/notary.asc
