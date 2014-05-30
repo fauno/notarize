@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# © 2014 Nicolás Reynolds <fauno@endefensadelsl.org>
+#
+# Copying and distribution of this file, with or without modification,
+# are permitted in any medium without royalty provided the copyright
+# notice and this notice are preserved.  This file is offered as-is,
+# without any warranty.
+# 
+# http://www.gnu.org/prep/maintain/html_node/License-Notices-for-Other-Files.html
+set -e
+
+# debuguear si exportamos la variable DEBUG con cualquier cosa
+test ! -z $DEBUG && set -x
+
+echo "hola" | gpg --clearsign >data.asc
+curl --data key=test --data-urlencode value@data.asc http://naven.local:4567/

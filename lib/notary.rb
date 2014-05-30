@@ -21,8 +21,16 @@ get '/' do
 end
 
 post '/' do
-  TOKYO.put(params[:key], params[:value])
-  TOKYO.sync
+  GPG.verify(params[:value]) do |sig|
+    if sig.valid?
+      TOKYO.put(params[:key], params[:value])
+      TOKYO.sync
+
+      'OK'
+    else
+      'INVALID'
+    end
+  end
 end
 
 post '/import' do
