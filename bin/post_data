@@ -12,5 +12,6 @@ set -e
 # debuguear si exportamos la variable DEBUG con cualquier cosa
 test ! -z $DEBUG && set -x
 
-echo "hola" | gpg --clearsign >data.asc
-curl --data key=test --data-urlencode value@data.asc http://naven.local:4567/
+key=$1; shift
+echo "$@" | gpg --clearsign >data.asc
+curl --data key=$key --data-urlencode value@data.asc http://localhost:4567/

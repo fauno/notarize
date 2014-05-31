@@ -1,6 +1,7 @@
 require 'sinatra'
 require 'tokyocabinet'
 require 'gpgme'
+require 'json'
 
 ENV['GNUPGHOME'] = File.dirname(__FILE__) + '/../gnupg'
 
@@ -17,16 +18,24 @@ end
 get '/' do
   value = TOKYO.get(params[:key])
 
-  GPG.clearsign(value).to_s if !value.nil?
+  if !value.nil?
+    {
+      sig: GPG.sign(value).to_s,
+      value: value,
+      key: params[:key]
+    }.to_json
+  else
+    { error: "not_found" }.to_json
+  end
 end
 
 post '/' do
   GPG.verify(params[:value]) do |sig|
     if sig.valid?
-      TOKYO.put(params[:key], params[:value])
-      TOKYO.sync
-
-      'OK'
+      if TOKYO.put(params[:key], params[:value])
+        TOKYO.sync
+        'OK'
+      end
     else
       'INVALID'
     end
