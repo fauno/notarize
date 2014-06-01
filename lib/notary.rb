@@ -6,7 +6,7 @@ require 'json'
 ENV['GNUPGHOME'] = File.dirname(__FILE__) + '/../gnupg'
 
 TOKYO = TokyoCabinet::HDB::new
-TOKYO.open('notary.tch', TokyoCabinet::HDB::OWRITER | TokyoCabinet::HDB::OCREAT)
+TOKYO.open('db/notary.tch', TokyoCabinet::HDB::OWRITER | TokyoCabinet::HDB::OCREAT)
 
 GPG = GPGME::Crypto.new armor: true
 CTX = GPGME::Ctx.new armor: true, textmode: true
