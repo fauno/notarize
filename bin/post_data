@@ -13,5 +13,5 @@ set -e
 test ! -z $DEBUG && set -x
 
 key=$1; shift
-echo "$@" | gpg --clearsign >data.asc
-curl --data key=$key --data-urlencode value@data.asc http://localhost:4567/
+cat | tee -a data | gpg --sign --armor >data.asc
+curl --data key=$key --data-urlencode value@data --data-urlencode sig@data.asc http://localhost:4567/

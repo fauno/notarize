@@ -30,15 +30,18 @@ get '/' do
 end
 
 post '/' do
-  GPG.verify(params[:value]) do |sig|
-    if sig.valid?
-      if TOKYO.put(params[:key], params[:value])
-        TOKYO.sync
-        'OK'
-      end
-    else
-      'INVALID'
+  CTX.verify(GPGME::Data.new(params[:sig]), GPGME::Data.new(params[:value]))
+
+  sig = CTX.verify_result.signatures[0]
+
+  if sig.valid?
+    if TOKYO.put(params[:key], params[:value])
+      TOKYO.sync
+      'OK'
     end
+  else
+    puts 'invalid or unrecognized: ' + sig.fpr
+    'INVALID'
   end
 end
 
