@@ -59,7 +59,8 @@ post '/' do
     store = {
       'value' => params[:value],
       'sig' => params[:sig],
-      'fpr' => sig.fpr
+      'fpr' => sig.fpr,
+      'time' => Time.now.to_i
     }
 
 # store the data and return OK to the client
