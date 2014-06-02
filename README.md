@@ -24,19 +24,12 @@ otros nodos puedan pedírselas y comparar qué vio cada uno
   sobre la información (usar el algoritmo de Perspectives)
 
 
-
-## Tecnología
-
-API por HTTP o por DNS?  Las dos?  HTTP es más fácil de implementar
-y sin DNSSEC también es más fácil de proteger criptográficamente la
-información.
-
-
 ## Protocolo
 
-* Cliente postea un par llave=valor firmado
+* Cliente postea al notario el { key, value, sig } donde sig es la firma
+  gpg del valor y key una cadena arbitraria para identificarlo
 * Notario chequea la firma
-* Si la firma es válida y conocida, guarda la información
+* Si la firma es válida y conocida, guarda/actualiza la información
 
 * Cliente pide una llave al Notario
 * Notario responde con la información firmada
