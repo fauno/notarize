@@ -8,8 +8,7 @@ require 'json'
 # use a local key, see bin/genkey
 ENV['GNUPGHOME'] = File.dirname(__FILE__) + '/../gnupg'
 
-# load context and crypto for the key
-GPG = GPGME::Crypto.new armor: true
+# load context for the key
 CTX = GPGME::Ctx.new armor: true, textmode: true
 
 # create or open a tokyo cabinet table
