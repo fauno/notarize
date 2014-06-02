@@ -21,22 +21,23 @@ CTX.each_key do |k|
   puts k
 end
 
-# pass ?key=the_key to pull results
+# pull results
+# key: the key for the info to pull
 get '/' do
   value = TOKYO.get(params[:key])
 
 # if there's something, return it as json
   if !value.nil?
-    value.to_json
+    halt 200, value.to_json
   else
-    { error: "not_found" }.to_json
+    halt 404, { msg: 'not_found' }.to_json
   end
 end
 
 # push info here
-# key: the key for the info we want to store
+# key:   the key for the info we want to store
 # value: the value
-# sig: the gpg sig of the value
+# sig:   the gpg sig of the value
 post '/' do
 # the notary verifies the signature
   CTX.verify(GPGME::Data.new(params[:sig]), GPGME::Data.new(params[:value]))
@@ -51,7 +52,7 @@ post '/' do
 # info they didn't post originally.
     prev_value = TOKYO.get(params[:key])
     if !prev_value.nil? && sig.fpr != prev_value['fpr']
-      halt 403, 'NOT_COOL'
+      halt 403, { msg: 'not_cool' }.to_json
     end
 
 # values to store, we use string keys to avoid an implicit conversion
@@ -63,19 +64,22 @@ post '/' do
     }
 
 # store the data and return OK to the client
-    if TOKYO.put(params[:key], store)
-      TOKYO.sync
-      'OK'
+    if TOKYO.put(params[:key], store) && TOKYO.sync
+      halt 200, { msg: 'ok' }.to_json
     end
 # otherwise complain
   else
     puts 'invalid or unrecognized: ' + sig.fpr
-    'INVALID'
+    halt 400, { msg: 'invalid' }.to_json
   end
 end
 
 # send a key here
 # pubkey: ascii armored key(s)
 post '/import' do
-  'OK' if GPGME::Key.import(params[:pubkey]).imported > 0
+  if GPGME::Key.import(params[:pubkey]).imported > 0
+    halt 200, { msg: 'ok' }.to_json
+  else
+    halt 400, { msg: 'invalid' }.to_json
+  end
 end
