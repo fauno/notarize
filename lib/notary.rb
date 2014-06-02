@@ -46,6 +46,13 @@ post '/' do
 
 # if the sig is valid
   if sig.valid?
+# when there's a previous value, check both signers fingerprints.  if
+# they don't match, stop everything since someone's trying to modify
+# info they didn't post originally.
+    prev_value = TOKYO.get(params[:key])
+    if !prev_value.nil? && sig.fpr != prev_value['fpr']
+      halt 403, 'NOT_COOL'
+    end
 
 # values to store, we use string keys to avoid an implicit conversion
 # error on put()
