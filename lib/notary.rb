@@ -5,8 +5,8 @@ require 'json'
 
 ENV['GNUPGHOME'] = File.dirname(__FILE__) + '/../gnupg'
 
-TOKYO = TokyoCabinet::HDB::new
-TOKYO.open('db/notary.tch', TokyoCabinet::HDB::OWRITER | TokyoCabinet::HDB::OCREAT)
+TOKYO = TokyoCabinet::TDB::new
+TOKYO.open('db/notary.tct', TokyoCabinet::TDB::OWRITER | TokyoCabinet::TDB::OCREAT)
 
 GPG = GPGME::Crypto.new armor: true
 CTX = GPGME::Ctx.new armor: true, textmode: true
@@ -19,11 +19,7 @@ get '/' do
   value = TOKYO.get(params[:key])
 
   if !value.nil?
-    {
-      sig: GPG.sign(value).to_s,
-      value: value,
-      key: params[:key]
-    }.to_json
+    value.to_json
   else
     { error: "not_found" }.to_json
   end
@@ -35,7 +31,16 @@ post '/' do
   sig = CTX.verify_result.signatures[0]
 
   if sig.valid?
-    if TOKYO.put(params[:key], params[:value])
+
+# values to store, we use string keys to avoid an implicit conversion
+# error on put()
+    store = {
+      'value' => params[:value],
+      'sig' => params[:sig],
+      'fpr' => sig.fpr
+    }
+
+    if TOKYO.put(params[:key], store)
       TOKYO.sync
       'OK'
     end
