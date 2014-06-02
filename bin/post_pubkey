@@ -12,6 +12,6 @@ set -e
 # debuguear si exportamos la variable DEBUG con cualquier cosa
 test ! -z $DEBUG && set -x
 
-gpg --export --armor "$1" >"${1}.asc"
+gpg --export --armor "$1" >"tmp/${1}.asc"
 
-curl --data-urlencode "pubkey@$1.asc" http://localhost:4567/import
+curl --data-urlencode "pubkey@tmp/$1.asc" http://localhost:4567/import

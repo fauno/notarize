@@ -1,6 +1,7 @@
 vendor/
 .bundle/
 gnupg/
+tmp/
 *.tch
 *.tct
 *.asc
