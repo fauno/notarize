@@ -13,7 +13,7 @@ set -e
 test ! -z $DEBUG && set -x
 
 key=$1; shift
-cat | tee -a tmp/data | gpg --sign --armor >tmp/data.asc
+cat | tee tmp/data | gpg --sign --armor >tmp/data.asc
 curl --data key=$key \
      --data-urlencode value@tmp/data \
      --data-urlencode sig@tmp/data.asc \
