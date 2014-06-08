@@ -3,12 +3,13 @@ require 'gpgme'
 
 module Notary
   class Reply
-    attr_accessor :fpr, :sig, :value, :ctx
+    attr_accessor :fpr, :sig, :value, :time, :ctx
 
     def initialize(res_body, ctx)
       self.fpr    =  res_body['fpr']
       self.sig    =  res_body['sig']
       self.value  =  res_body['value']
+      self.time   =  res_body['time']
       self.ctx    =  ctx
     end
 
