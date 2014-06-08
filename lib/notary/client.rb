@@ -1,4 +1,11 @@
 # encoding: utf-8
+# TODO remove when gem is ready
+$:.unshift File.dirname(__FILE__)
+
+# TODO throw error when context can load valid gpg data and remove this
+ENV['GNUPGHOME'] ||= File.dirname(__FILE__) + '../../gnupg'
+
+require 'reply'
 require 'net/https'
 require 'gpgme'
 require 'json'
@@ -7,13 +14,14 @@ require 'pry'
 # Notary::Client
 module Notary
   class Client
-    attr_reader :notaries, :dissent, :replies
+    attr_reader :notaries, :dissent, :replies, :total_replies
 
     # Initialize with an Array of notaries URLs
     def initialize(notaries = [], dissent = 0.3)
       @notaries = notaries
       @dissent = dissent
-      @replies = []
+      @replies = {}
+      @total_replies = 0
       @ctx = GPGME::Ctx.new armor: true, textmode: true
     end
 
@@ -25,13 +33,19 @@ module Notary
 
         # TODO only talk to HTTPS notaries
         res = Net::HTTP.get_response(notary_uri)
+        body = JSON.parse(res.body) if res.is_a? Net::HTTPSuccess
+        fpr = body["fpr"]
 
-        @replies << JSON.parse(res.body) if res.is_a? Net::HTTPSuccess
-
+        # we group all replies by fingerprint, to decide how many
+        # different identities are providing the same key
+        @replies[fpr] ||= []
+        @replies[fpr] << Notary::Reply.new(body, @ctx)
+        # count total replies
+        @total_replies += 1
       end
 
-      return consensus
-
+      # return a Notary::Reply
+      consensus
     end
 
     def consensus
@@ -39,26 +53,25 @@ module Notary
       # notaries are replying with verifiable info
       #
       # there's no consensus when less than needed notaries reply
-      return false if !is_there_consensus? @replies.count
+      return false unless is_there_consensus? @total_replies
 
-      # we group all replies by fingerprint, to decide how many
-      # different identities are providing the same key
-      @replies = @replies.group_by { |v| v["fpr"] }
+      # get the most frequent fingerprint with all its replies
+      fpr = most_frequent_fpr
 
-      # get the most frequent fingerprint
-      fpr = Hash[*@replies.map { |k,v| [ v.count, k ] }.flatten].sort.last[1]
-
-      return false if !is_there_consensus? @replies[fpr].count
+      return false unless is_there_consensus? fpr.last.count
 
       # we check the signatures of the value and discard unverifiable
       # data
       #
       # we also discard fingerprint and signature mismatch just in case
       # notaries are lying
-      @replies[fpr].map! { |reply| reply if fpr == verify_reply(reply) }
+      vr = valid_replies(fpr.last, fpr.first)
 
       # then we check if we have enough replies and pick the latest info
-      return false if !is_there_consensus? @replies[fpr].count
+      return false unless is_there_consensus? vr.count
+
+      # return a Notary::Reply
+      most_recent_reply(vr)
     end
 
     private
@@ -68,13 +81,16 @@ module Notary
         ( q / @notaries.count ) > @dissent
       end
 
-      # return the fingerprint if the signature is valid
-      def verify_reply(reply)
-        @ctx.verify(GPGME::Data.new(reply[:sig]), GPGME::Data.new(reply[:value]))
+      def most_frequent_fpr
+        @replies.sort_by { |_, v| v.count }.last
+      end
 
-        if (sig = @ctx.verify_result.signatures[0]).valid?
-          sig.fpr
-        end
+      def valid_replies(replies = [], fpr)
+        replies.select { |r| r.valid? && r.fpr == fpr }
+      end
+
+      def most_recent_reply(replies = [])
+        replies.sort_by { |r| r.time }.last
       end
 
   end
