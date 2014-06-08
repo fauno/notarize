@@ -9,7 +9,6 @@ require 'reply'
 require 'net/https'
 require 'gpgme'
 require 'json'
-require 'pry'
 
 # Notary::Client
 module Notary
