@@ -7,7 +7,12 @@ require 'gpgme'
 require 'json'
 
 # use a local key, see bin/genkey
-ENV['GNUPGHOME'] = File.dirname(__FILE__) + '/../gnupg'
+ENV['GNUPGHOME'] ||= File.absolute_path(File.join(File.dirname(__FILE__), '..', 'gnupg'))
+
+# check if the keyring really exists
+if !File.readable?(File.join(ENV['GNUPGHOME'], 'pubring.gpg'))
+  abort("Public GPG keyring at #{ENV['GNUPGHOME']} not readable\nMaybe it doesn't exist?")
+end
 
 # load context for the key
 CTX = GPGME::Ctx.new armor: true, textmode: true
