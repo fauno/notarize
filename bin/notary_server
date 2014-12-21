@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 # encoding: utf-8
 # dependencies
 require 'sinatra'
@@ -6,7 +7,12 @@ require 'gpgme'
 require 'json'
 
 # use a local key, see bin/genkey
-ENV['GNUPGHOME'] = File.dirname(__FILE__) + '/../gnupg'
+ENV['GNUPGHOME'] ||= File.absolute_path(File.join(File.dirname(__FILE__), '..', 'gnupg'))
+
+# check if the keyring really exists
+if !File.readable?(File.join(ENV['GNUPGHOME'], 'pubring.gpg'))
+  abort("Public GPG keyring at #{ENV['GNUPGHOME']} not readable\nMaybe it doesn't exist?")
+end
 
 # load context for the key
 CTX = GPGME::Ctx.new armor: true, textmode: true
@@ -58,9 +64,9 @@ post '/' do
 # error on put()
     store = {
       'value' => params[:value],
-      'sig' => params[:sig],
-      'fpr' => sig.fpr,
-      'time' => Time.now.to_i
+      'sig'   => params[:sig],
+      'fpr'   => sig.fpr,
+      'time'  => Time.now.to_i
     }
 
 # store the data and return OK to the client
